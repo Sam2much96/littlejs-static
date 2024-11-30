@@ -64,14 +64,15 @@ declare module "littlejsengine" {
      *  @memberof Engine */
     export function setPaused(isPaused: boolean): void;
     /** Startup LittleJS engine with your callback functions
-     *  @param {Function} gameInit       - Called once after the engine starts up, setup the game
-     *  @param {Function} gameUpdate     - Called every frame at 60 frames per second, handle input and update the game state
-     *  @param {Function} gameUpdatePost - Called after physics and objects are updated, setup camera and prepare for render
-     *  @param {Function} gameRender     - Called before objects are rendered, draw any background effects that appear behind objects
-     *  @param {Function} gameRenderPost - Called after objects are rendered, draw effects or hud that appear above all objects
-     *  @param {Array} [imageSources=['tiles.png']] - Image to load
+     *  @param {Function|function():Promise} gameInit - Called once after the engine starts up
+     *  @param {Function} gameUpdate - Called every frame before objects are updated
+     *  @param {Function} gameUpdatePost - Called after physics and objects are updated, even when paused
+     *  @param {Function} gameRender - Called before objects are rendered, for drawing the background
+     *  @param {Function} gameRenderPost - Called after objects are rendered, useful for drawing UI
+     *  @param {Array} [imageSources=[]] - List of images to load
+     *  @param {HTMLElement} [rootElement] - Root element to attach to, the document body by default
      *  @memberof Engine */
-    export function engineInit(gameInit: Function, gameUpdate: Function, gameUpdatePost: Function, gameRender: Function, gameRenderPost: Function, imageSources?: any[]): void;
+    export function engineInit(gameInit: Function | (() => Promise<any>), gameUpdate: Function, gameUpdatePost: Function, gameRender: Function, gameRenderPost: Function, imageSources?: any[], rootElement?: HTMLElement): void;
     /** Update each engine object, remove destroyed objects, and update time
      *  @memberof Engine */
     export function engineObjectsUpdate(): void;
@@ -85,6 +86,13 @@ declare module "littlejsengine" {
      *  @param {Array} [objects=engineObjects] - List of objects to check
      *  @memberof Engine */
     export function engineObjectsCallback(pos?: Vector2, size?: number | Vector2, callbackFunction?: Function, objects?: any[]): void;
+    /** Return a list of objects intersecting a ray
+     *  @param {Vector2} start
+     *  @param {Vector2} end
+     *  @param {Array} [objects=engineObjects] - List of objects to check
+     *  @return {Array} - List of objects hit
+     *  @memberof Engine */
+    export function engineObjectsRaycast(start: Vector2, end: Vector2, objects?: any[]): any[];
     /** Add a new update function for a plugin
      *  @param {Function} [updateFunction]
      *  @param {Function} [renderFunction]
@@ -664,6 +672,14 @@ declare module "littlejsengine" {
      *  @return {Boolean}              - True if overlapping
      *  @memberof Utilities */
     export function isOverlapping(posA: Vector2, sizeA: Vector2, posB: Vector2, sizeB?: Vector2): boolean;
+    /** Returns true if a line segment is intersecting an axis aligned box
+     *  @param {Vector2} start - Start of raycast
+     *  @param {Vector2} end   - End of raycast
+     *  @param {Vector2} pos   - Center of box
+     *  @param {Vector2} size  - Size of box
+     *  @return {Boolean}      - True if intersecting
+     *  @memberof Utilities */
+    export function isIntersecting(start: Vector2, end: Vector2, pos: Vector2, size: Vector2): boolean;
     /** Returns an oscillating wave between 0 and amplitude with frequency of 1 Hz by default
      *  @param {Number} [frequency] - Frequency of the wave in Hz
      *  @param {Number} [amplitude] - Amplitude (max height) of the wave
@@ -1025,17 +1041,69 @@ declare module "littlejsengine" {
      * @memberof Utilities
      */
     export function hsl(h?: number, s?: number, l?: number, a?: number): Color;
+    /**
+     * Check if object is a valid Color
+     * @param {any} c
+     * @return {Boolean}
+     * @memberof Utilities
+     */
+    export function isColor(c: any): boolean;
+    /** Color - White
+     *  @type {Color}
+     *  @memberof Utilities */
+    export const WHITE: Color;
+    /** Color - Black
+     *  @type {Color}
+     *  @memberof Utilities */
+    export const BLACK: Color;
+    /** Color - Gray
+     *  @type {Color}
+     *  @memberof Utilities */
+    export const GRAY: Color;
+    /** Color - Red
+     *  @type {Color}
+     *  @memberof Utilities */
+    export const RED: Color;
+    /** Color - Orange
+     *  @type {Color}
+     *  @memberof Utilities */
+    export const ORANGE: Color;
+    /** Color - Yellow
+     *  @type {Color}
+     *  @memberof Utilities */
+    export const YELLOW: Color;
+    /** Color - Green
+     *  @type {Color}
+     *  @memberof Utilities */
+    export const GREEN: Color;
+    /** Color - Cyan
+     *  @type {Color}
+     *  @memberof Utilities */
+    export const CYAN: Color;
+    /** Color - Blue
+     *  @type {Color}
+     *  @memberof Utilities */
+    export const BLUE: Color;
+    /** Color - Purple
+     *  @type {Color}
+     *  @memberof Utilities */
+    export const PURPLE: Color;
+    /** Color - Magenta
+     *  @type {Color}
+     *  @memberof Utilities */
+    export const MAGENTA: Color;
     /** Array containing texture info for batch rendering system
      *  @type {Array}
      *  @memberof Draw */
     export let textureInfos: any[];
     /**
-     * Create a tile info object
+     * Create a tile info object using a grid based system
      * - This can take vecs or floats for easier use and conversion
      * - If an index is passed in, the tile size and index will determine the position
-     * @param {(Number|Vector2)} [pos=(0,0)]            - Top left corner of tile in pixels or index
+     * @param {(Number|Vector2)} [pos=0]                - Index of tile in sheet
      * @param {(Number|Vector2)} [size=tileSizeDefault] - Size of tile in pixels
      * @param {Number} [textureIndex]                   - Texture index to use
+     * @param {Number} [padding]                        - How many pixels padding around tiles
      * @return {TileInfo}
      * @example
      * tile(2)                       // a tile at index 2 using the default tile size of 16
@@ -1044,7 +1112,7 @@ declare module "littlejsengine" {
      * tile(vec2(4,8), vec2(30,10))  // a tile at pixel location (4,8) with a size of (30,10)
      * @memberof Draw
      */
-    export function tile(pos?: (number | Vector2), size?: (number | Vector2), textureIndex?: number): TileInfo;
+    export function tile(pos?: (number | Vector2), size?: (number | Vector2), textureIndex?: number, padding?: number): TileInfo;
     /**
      * Tile Info - Stores info about how to draw a tile
      */
@@ -1053,14 +1121,17 @@ declare module "littlejsengine" {
          *  @param {Vector2} [pos=(0,0)]            - Top left corner of tile in pixels
          *  @param {Vector2} [size=tileSizeDefault] - Size of tile in pixels
          *  @param {Number}  [textureIndex]         - Texture index to use
+         *  @param {Number}  [padding]              - How many pixels padding around tiles
          */
-        constructor(pos?: Vector2, size?: Vector2, textureIndex?: number);
+        constructor(pos?: Vector2, size?: Vector2, textureIndex?: number, padding?: number);
         /** @property {Vector2} - Top left corner of tile in pixels */
         pos: Vector2;
         /** @property {Vector2} - Size of tile in pixels */
         size: Vector2;
         /** @property {Number} - Texture index to use */
         textureIndex: number;
+        /** @property {Number} - How many pixels padding around tiles */
+        padding: number;
         /** Returns a copy of this tile offset by a vector
         *  @param {Vector2} offset - Offset to apply in pixels
         *  @return {TileInfo}
@@ -1089,8 +1160,6 @@ declare module "littlejsengine" {
         size: Vector2;
         /** @property {WebGLTexture} - webgl texture */
         glTexture: WebGLTexture;
-        /** @property {Vector2} - size to adjust tile to fix bleeding */
-        fixBleedSize: Vector2;
     }
     /**
      * LittleJS Drawing System
@@ -1176,6 +1245,37 @@ declare module "littlejsengine" {
      *  @param {CanvasRenderingContext2D|OffscreenCanvasRenderingContext2D} [context]
      *  @memberof Draw */
     export function drawLine(posA: Vector2, posB: Vector2, thickness?: number, color?: Color, useWebGL?: boolean, screenSpace?: boolean, context?: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D): void;
+    /** Draw colored polygon using passed in points
+     *  @param {Array}   points - Array of Vector2 points
+     *  @param {Color}   [color=(1,1,1,1)]
+     *  @param {Number}  [lineWidth=0]
+     *  @param {Color}   [lineColor=(0,0,0,1)]
+     *  @param {Boolean} [screenSpace=false]
+     *  @param {CanvasRenderingContext2D} [context=mainContext]
+     *  @memberof Draw */
+    export function drawPoly(points: any[], color?: Color, lineWidth?: number, lineColor?: Color, screenSpace?: boolean, context?: CanvasRenderingContext2D): void;
+    /** Draw colored ellipse using passed in point
+     *  @param {Vector2} pos
+     *  @param {Number}  [width=1]
+     *  @param {Number}  [height=1]
+     *  @param {Number}  [angle=0]
+     *  @param {Color}   [color=(1,1,1,1)]
+     *  @param {Number}  [lineWidth=0]
+     *  @param {Color}   [lineColor=(0,0,0,1)]
+     *  @param {Boolean} [screenSpace=false]
+     *  @param {CanvasRenderingContext2D} [context=mainContext]
+     *  @memberof Draw */
+    export function drawEllipse(pos: Vector2, width?: number, height?: number, angle?: number, color?: Color, lineWidth?: number, lineColor?: Color, screenSpace?: boolean, context?: CanvasRenderingContext2D): void;
+    /** Draw colored circle using passed in point
+     *  @param {Vector2} pos
+     *  @param {Number}  [radius=1]
+     *  @param {Color}   [color=(1,1,1,1)]
+     *  @param {Number}  [lineWidth=0]
+     *  @param {Color}   [lineColor=(0,0,0,1)]
+     *  @param {Boolean} [screenSpace=false]
+     *  @param {CanvasRenderingContext2D} [context=mainContext]
+     *  @memberof Draw */
+    export function drawCircle(pos: Vector2, radius?: number, color?: Color, lineWidth?: number, lineColor?: Color, screenSpace?: boolean, context?: CanvasRenderingContext2D): void;
     /** Draw directly to a 2d canvas context in world space
      *  @param {Vector2}  pos
      *  @param {Vector2}  size
@@ -1203,8 +1303,9 @@ declare module "littlejsengine" {
      *  @param {CanvasTextAlign}  [textAlign]
      *  @param {String}  [font=fontDefault]
      *  @param {CanvasRenderingContext2D|OffscreenCanvasRenderingContext2D} [context=overlayContext]
+     *  @param {Number}  [maxWidth]
      *  @memberof Draw */
-    export function drawTextScreen(text: string, pos: Vector2, size?: number, color?: Color, lineWidth?: number, lineColor?: Color, textAlign?: CanvasTextAlign, font?: string, context?: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D): void;
+    export function drawTextScreen(text: string, pos: Vector2, size?: number, color?: Color, lineWidth?: number, lineColor?: Color, textAlign?: CanvasTextAlign, font?: string, context?: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, maxWidth?: number): void;
     /** Draw text on overlay canvas in world space
      *  Automatically splits new lines into rows
      *  @param {String}  text
@@ -1216,8 +1317,9 @@ declare module "littlejsengine" {
      *  @param {CanvasTextAlign}  [textAlign='center']
      *  @param {String}  [font=fontDefault]
      *  @param {CanvasRenderingContext2D|OffscreenCanvasRenderingContext2D} [context=overlayContext]
+     *  @param {Number}  [maxWidth]
      *  @memberof Draw */
-    export function drawText(text: string, pos: Vector2, size?: number, color?: Color, lineWidth?: number, lineColor?: Color, textAlign?: CanvasTextAlign, font?: string, context?: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D): void;
+    export function drawText(text: string, pos: Vector2, size?: number, color?: Color, lineWidth?: number, lineColor?: Color, textAlign?: CanvasTextAlign, font?: string, context?: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, maxWidth?: number): void;
     export let engineFontImage: any;
     /**
      * Font Image Object - Draw text on a 2D canvas by using characters in an image
@@ -1332,6 +1434,23 @@ declare module "littlejsengine" {
      *  @param {WebGLTexture} texture
      *  @memberof WebGL */
     export function glSetTexture(texture: WebGLTexture): void;
+    /** Set antialiasing for webgl canvas
+     *  @param {Boolean} [antialias]
+     *  @memberof WebGL */
+    export function glSetAntialias(antialias?: boolean): void;
+    /** Shoule webgl be setup with antialiasing, must be set before calling engineInit
+     *  @type {Boolean}
+     *  @memberof WebGL */
+    export let glAntialias: boolean;
+    export let glShader: any;
+    export let glActiveTexture: any;
+    export let glArrayBuffer: any;
+    export let glGeometryBuffer: any;
+    export let glPositionData: any;
+    export let glColorData: any;
+    export let glInstanceCount: any;
+    export let glAdditive: any;
+    export let glBatchAdditive: any;
     /**
      * LittleJS Input System
      * - Tracks keyboard down, pressed, and released
@@ -1469,6 +1588,8 @@ declare module "littlejsengine" {
         taper: number;
         /** @property {Number} - How much to randomize frequency each time sound plays */
         randomness: any;
+        /** @property {GainNode} - Gain node for this sound */
+        gainNode: GainNode;
         sampleChannels: any[][];
         sampleRate: number;
         /** Play the sound
@@ -1480,7 +1601,6 @@ declare module "littlejsengine" {
          *  @return {AudioBufferSourceNode} - The audio source node
          */
         play(pos?: Vector2, volume?: number, pitch?: number, randomnessScale?: number, loop?: boolean): AudioBufferSourceNode;
-        gainNode: GainNode;
         source: AudioBufferSourceNode;
         /** Set the sound volume
          *  @param {Number}  [volume] - How much to scale volume by
